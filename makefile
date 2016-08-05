@@ -4,8 +4,8 @@ OBJS = main.o Scheduler.o Memory.o PCB.o
 
 .PHONY: clean
 
-~/temp/run.me : $(OBJS)
-	g++ $(CXXFLAGS) $(OBJS) -o ~/temp/run.me
+run.me : $(OBJS)
+	g++ $(CXXFLAGS) $(OBJS) -o run.me
 
 main.o : Scheduler.h
 
