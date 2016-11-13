@@ -47,14 +47,14 @@ public:
     /* Print all data members of a PCB. Output spacing is formatted and ends in a new line. */
     void Print();
 
-    friend bool operator<(const PCB& lhs, const PCB& rhs) {
-        return lhs.expected_next_burst_remaining_ < rhs.expected_next_burst_remaining_ ? true : false;
+    bool operator<(const PCB& rhs) const {
+        return expected_next_burst_remaining_ < rhs.expected_next_burst_remaining_ ? true : false;
     }
-    friend bool operator>(const PCB& lhs, const PCB& rhs) {
-        return lhs.expected_next_burst_remaining_ > rhs.expected_next_burst_remaining_ ? true : false;
+    bool operator>(const PCB& rhs) const {
+        return expected_next_burst_remaining_ > rhs.expected_next_burst_remaining_ ? true : false;
     }
-    friend bool operator==(const PCB& lhs, const PCB& rhs) {
-        return lhs.expected_next_burst_remaining_ == rhs.expected_next_burst_remaining_ ? true : false;
+    bool operator==(const PCB& rhs) const {
+        return expected_next_burst_remaining_ == rhs.expected_next_burst_remaining_ ? true : false;
     }
 
     void UpdatePCBAfterSyscall(double CPU_usage, double his_param)   {
