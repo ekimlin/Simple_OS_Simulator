@@ -3,19 +3,7 @@
  * Title: Scheduler.h
  * Date Created: 3.2.2016
  * Description: Scheduler is a tool for simulating some basic devices in an operating system that manage processes.
- * Modifications:
- * 3.5.2016 Changed output formatting. Added parse_command() and its dependent functions. Modified 
- *                   print utility that snapshot() calls.
- * 3.7.2016 Added printPIDs() and modified fillCPU() to check if Ready Queue is empty first.
- * 4.7.2016 Added private data members history_parameter_, initial_burst_estimate_ and num_cylinders_
- *                    and modified constructor accordingly.
- * 4.9.2016 Implemented Shortest Job First Scheduling for Ready Queue. Changed Ready_Queue to be a std::set and changed all insert
- *          and remove operatations accordingly. 
- * 5.6.2016 Added memory_unit_ and updated constructor, AddProcess() accordingly.
- * 5.7.2016 Added LoadProcess() and KillProcess(). Updated ParseCommand() to recognize K#. 
- * 5.8.2016 Updated DisplayQueues() and added DisplayPageTables(). 
- */
-
+*/
 
 #ifndef Scheduler_h
 #define Scheduler_h
