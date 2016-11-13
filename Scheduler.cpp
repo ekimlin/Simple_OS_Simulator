@@ -51,22 +51,22 @@ void Scheduler::AddNewProcess()
         std::cout << "       Size of Process cannot be larger than total memory. Rejected. \n";
         return;
     }
-    PCB p(++process_counter_, initial_burst_estimate_, size_of_process);
-    bool process_assigned_memory = memory_unit_.AssignMemory(p);
-    if (process_assigned_memory) AddProcessToReadyQueue(p);
+    PCB p(++process_counter_, initial_burst_estimate_, size_of_process); //Create a new process
+    bool process_assigned_memory = memory_unit_.AssignMemory(p); //Place process in Job Pool or assign it memory depending on available memory
+    if (process_assigned_memory) AddProcessToReadyQueue(p); //If process was assigned memory, give it to Ready Queue
 }
 
 void Scheduler::TerminateProcessInCPU() {
-    if (CPU_ == nullptr)
+    if (CPU_ == nullptr) //Handle user error
         std::cout << "       There is no process to terminate in the CPU. Please enter another command.\n";
     else {
         std::cout << "     Process " << CPU_->getPID() << " has finished running in the CPU. \n";
         UpdateAccountingInfo_Syscall(*CPU_);
         TerminatingProcessAccounting(*CPU_);
-        delete CPU_;
+        delete CPU_; //Delete the process in the CPU
         CPU_ = nullptr;
-        FillCPU();
-        LoadProcesses(); 
+        FillCPU(); //Fill the CPU with the next process in the Ready Queue. 
+        LoadProcesses(); //Now that there is more available memory, give memory to next process in Job Pool. 
     }
 }
 
@@ -128,7 +128,7 @@ void Scheduler::Init(std::vector<std::deque<PCB> >& device, std::string device_n
     std::cout << "   Enter the number of " << device_name << " that are in this system and press Enter." << std::endl;
     int num_device = SchedulerNamespace::GetPositiveIntFromUser();
     for (int i = 0; i < num_device; ++i)
-        device.push_back(std::deque<PCB>());
+        device.push_back(std::deque<PCB>()); //Create queue for each device to be able to hold its processes
 }
 
 void Scheduler::InitHisParam() {
@@ -165,31 +165,31 @@ void Scheduler::InitNumCylinders() {
     }
 }
 void Scheduler::FillCPU() {
-    if (CPU_ != nullptr) return; //CPU is not idle. 
-    if (Ready_Queue_.empty()) {
+    if (CPU_ != nullptr) return; //CPU is not idle; cannot add process to CPU that in use.
+    if (Ready_Queue_.empty()) { //CPU is empty, but there are no process waiting to be run. 
         CPU_ = nullptr;
         std::cout << "     No processes to run. The CPU is idle." << std::endl;
     } else {
-        PCB process_to_run = *Ready_Queue_.begin(); //Pick PCB with smallest expected burst
+        PCB process_to_run = *Ready_Queue_.begin(); //Pick next process from Ready Queue
         std::cout << "     Process " << process_to_run.getPID() << " has been added to the CPU." << std::endl;
-        CPU_ = new PCB(process_to_run);
-        Ready_Queue_.erase(Ready_Queue_.begin());
+        CPU_ = new PCB(process_to_run); //copy next process in Ready Queue over to CPU
+        Ready_Queue_.erase(Ready_Queue_.begin()); //delete that process in the Ready Queue
     }
 }
 
 void Scheduler::DisplayQueues(std::vector<std::deque<PCB> >& device, char first_letter) const {
-    for (size_t i = 0; i < device.size(); i++) {
-        std::cout << "   Device: " << first_letter << i+1 << std::endl;
+    for (size_t i = 0; i < device.size(); i++) { //For each device of a certain type
+        std::cout << "   Device: " << first_letter << i+1 << std::endl; //output the device number
         if (device[i].empty()) {
             std::cout << "     This queue is empty.\n";
             continue;
-        } else {
+        } else { //Output the processes waiting to be run by this device
             for (auto iter = begin(device[i]); iter != end(device[i]); ++iter) {
                 iter->Print();
                 int phys_add = memory_unit_.CalculatePhysicalAddress(iter->getLogicalStartAddress(), iter->getPID());
-                std::cout << "   " << std::hex << phys_add << std::endl;
+                std::cout << "   " << std::hex << phys_add << std::endl; //Output the physical address of this processes
             }
-            DisplayPageTables(device, first_letter, i); 
+            DisplayPageTables(device, first_letter, i); //Display the page table of this process
         }
     }
 }
@@ -238,12 +238,12 @@ void Scheduler::ProcessSyscall(std::deque<PCB>& device_queue, std::string device
     }
     std::cout << "   The process in the CPU has requested " << device_name << " I/O.\n";
     UpdatePCB_InCPU(device_name, device_num);
-    PCB pcb = *CPU_;
-    device_queue.push_back(pcb); //Enqueue a copy of the updated PCB to the Device Queue it requested.
-    delete CPU_;
+    PCB pcb = *CPU_; //Make copy of process in CPU
+    device_queue.push_back(pcb); //Enqueue the copy of the updated PCB to the Device Queue it requested.
+    delete CPU_; //Remove the process from the CPU
     CPU_ = nullptr;
     std::cout << "  Process from CPU has been added to Device Queue.\n";
-    FillCPU();
+    FillCPU(); //Fill CPU with next process in Ready Queue
 } 
 
 void Scheduler::DeviceInterrupt(std::deque<PCB>& device_queue, std::string device_name) {
@@ -252,10 +252,10 @@ void Scheduler::DeviceInterrupt(std::deque<PCB>& device_queue, std::string devic
                   << "     Please enter another command." << std::endl;
         return;
     }
-    if (device_name == "disk") device_queue.front().setCylinder(-1); //Re-set cylinder number once disk I/O has completed. 
-    PCB ready_process = device_queue.front(); //copy front of device queue into new PCB
-    AddProcessToReadyQueue(ready_process);
-    device_queue.pop_front();
+    if (device_name == "disk") device_queue.front().setCylinder(-1); //Reset cylinder number once disk I/O has completed. 
+    PCB ready_process = device_queue.front(); //Make copy of the front of device queue
+    AddProcessToReadyQueue(ready_process); //Add this copy to the Ready Queue
+    device_queue.pop_front(); //Delete this process from the device queue
 }
 
 void Scheduler::KillProcess(int the_PID) {
@@ -264,13 +264,13 @@ void Scheduler::KillProcess(int the_PID) {
     if ( CPU_->getPID() == the_PID ) {
         TerminateProcessInCPU(); //Process to kill is in CPU. 
     }
-    else if ( memory_unit_.ProcessInJobPool(the_PID) ) {
-        memory_unit_.KillProcessInJobPool(the_PID);
-        LoadProcesses();  
+    else if ( memory_unit_.ProcessInJobPool(the_PID) ) { //Next check Job Pool
+        memory_unit_.KillProcessInJobPool(the_PID); //Delete this process
+        LoadProcesses(); //Give newly available memory to next process in Job Pool
     }
-    else if ( FindPCBAndKill_CheckReadyQ(the_PID) || FindPCBAndKill_CheckPrinters(the_PID) || 
+    else if ( FindPCBAndKill_CheckReadyQ(the_PID) || FindPCBAndKill_CheckPrinters(the_PID) ||  //Check device Queues and Ready Queue. If found, kill process.
                 FindPCBAndKill_CheckDisks(the_PID) || FindPCBAndKill_CheckCD_RW(the_PID) ) {
-        LoadProcesses(); 
+        LoadProcesses(); //Give newly available memory to next process in Job Pool
     }
     else 
         std::cout << "       No process with this PID is still in the system to Kill. Enter another command.\n";
@@ -278,12 +278,12 @@ void Scheduler::KillProcess(int the_PID) {
 
 bool Scheduler::FindPCBAndKill_CheckReadyQ(int the_PID) {
     auto rq_iter = Ready_Queue_.begin();
-    while ( rq_iter != Ready_Queue_.end() ) { //Search Ready Queue
+    while ( rq_iter != Ready_Queue_.end() ) { //Iteratively search Ready Queue
         if (rq_iter->getPID() == the_PID ) {
-            std::cout << "     P" << rq_iter->getPID() << " (located in Ready Queue) has been killed.\n";
             PCB PCB_to_be_killed = *rq_iter; //Make a copy of PCB to be killed because std::multiset doesn't allow elements to be modified.
-            TerminatingProcessAccounting(*rq_iter);
-            Ready_Queue_.erase(rq_iter); 
+            TerminatingProcessAccounting(*rq_iter); //Update the copy
+            Ready_Queue_.erase(rq_iter); //Delete original process from Ready Queue
+            std::cout << "     P" << rq_iter->getPID() << " (located in Ready Queue) has been killed.\n";
             return true;
         }
         ++rq_iter;
@@ -335,7 +335,7 @@ void Scheduler::TerminatingProcessAccounting(const PCB& process_to_kill) {
     ++num_terminated_processes_;
     avg_CPU_usage_ = avg_CPU_usage_ * ((num_terminated_processes_-1)/num_terminated_processes_) + (process_to_kill.getCPU_Usage()/num_terminated_processes_); 
         
-    memory_unit_.FreeMemory( process_to_kill.getPID() ); 
+    memory_unit_.FreeMemory( process_to_kill.getPID() ); //Free the memory that had been assigned to this process. 
 }
 
 void Scheduler::AddProcessToReadyQueue(PCB& a_process) {
